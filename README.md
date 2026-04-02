@@ -106,4 +106,4 @@ For issues, questions, or contributions, please open an issue or submit a pull r
 
 ---
 
-**Nebula** - Powered by NebularGPT 🚀
+**Nebula** - Powered by NebulaAI 🚀
