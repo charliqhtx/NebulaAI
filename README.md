@@ -26,13 +26,9 @@ Follow the instructions below to get started with NebulaAI.
 
 # Features
 
-- Feature 1: Description
-- Feature 2: Description
+- Basic chatbot experience
+- Certain features (e.g. copy and paste) may not be availible
 
-# API Endpoints
-
-1. **GET /api/endpoint1** - Description
-2. **POST /api/endpoint2** - Description
 
 # Configuration
 
