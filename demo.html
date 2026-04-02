@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #chatbox { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; }
+        #userInput { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Interactive Chatbot Demo</h1>
+    <div id="chatbox"></div>
+    <input type="text" id="userInput" placeholder="Type your message here..." />
+    <button onclick="sendMessage()">Send</button>
+    <script>
+        function sendMessage() {
+            const input = document.getElementById('userInput');
+            const chatbox = document.getElementById('chatbox');
+            const userMessage = input.value;
+            chatbox.innerHTML += `<div><strong>You:</strong> ${userMessage}</div>`;
+            input.value = '';
+            // Simulate bot response
+            setTimeout(() => {
+                chatbox.innerHTML += `<div><strong>Bot:</strong> Hello! How can I assist you?</div>`;
+                chatbox.scrollTop = chatbox.scrollHeight;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
