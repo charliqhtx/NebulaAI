@@ -1,33 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot Demo</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        #chatbox { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; }
-        #userInput { margin-top: 10px; }
-    </style>
+  <meta charset="UTF-8">
+  <title>NebulaAI Chatbot Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      background: url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1500&q=80') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    #overlay {
+      background: rgba(10, 11, 30, 0.65);
+      min-height: 100vh;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0; left: 0;
+      z-index: 0;
+    }
+    .chatbox-container {
+      position: relative;
+      z-index: 1;
+      max-width: 400px;
+      margin: 60px auto 0 auto;
+      background: rgba(30,30,45,0.95);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      padding: 28px 22px 22px 22px;
+    }
+    #chatbox {
+      color: white;
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(50,60,90,0.75);
+      min-height: 270px;
+      max-height: 320px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      font-size: 1em;
+    }
+    #userInput, #sendBtn {
+      font-size: 1em;
+      padding: 8px;
+    }
+    #userInput {
+      width: 65%;
+      border-radius: 5px;
+      border: 1px solid #555;
+      background: rgba(20, 30, 55, 0.8);
+      color: white;
+      margin-right: 1%;
+    }
+    #sendBtn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background: #7a5fff;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #sendBtn:hover {
+      background: #a06af9;
+    }
+    .message { margin: 8px 0; }
+    .user { color: #ffe66d; }
+    .bot { color: #36f3fd; }
+    @media (max-width: 480px) {
+      .chatbox-container {
+        max-width: 96vw;
+        padding: 8vw 3vw 3vw 3vw;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>Interactive Chatbot Demo</h1>
+  <div id="overlay"></div>
+  <div class="chatbox-container">
+    <h2 style="color:#fff;text-align:center;letter-spacing:1px;">🪐 NebulaAI Chatbot</h2>
     <div id="chatbox"></div>
-    <input type="text" id="userInput" placeholder="Type your message here..." />
-    <button onclick="sendMessage()">Send</button>
-    <script>
-        function sendMessage() {
-            const input = document.getElementById('userInput');
-            const chatbox = document.getElementById('chatbox');
-            const userMessage = input.value;
-            chatbox.innerHTML += `<div><strong>You:</strong> ${userMessage}</div>`;
-            input.value = '';
-            // Simulate bot response
-            setTimeout(() => {
-                chatbox.innerHTML += `<div><strong>Bot:</strong> Hello! How can I assist you?</div>`;
-                chatbox.scrollTop = chatbox.scrollHeight;
-            }, 1000);
-        }
-    </script>
+    <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" onkeydown="if(event.key==='Enter'){sendMessage();}">
+    <button id="sendBtn" onclick="sendMessage()">Send</button>
+  </div>
+  <script>
+    function appendMessage(sender, text) {
+      const chatbox = document.getElementById('chatbox');
+      chatbox.innerHTML += `<div class="message ${sender === 'user' ? 'user' : 'bot'}"><strong>${sender === 'user' ? "You" : "NebulaAI"}:</strong> ${text}</div>`;
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    // Joke list (could also fetch live from an API in a real implementation!)
+    const jokes = [
+      "Why did the astronaut break up with his girlfriend before going to space? He needed space!",
+      "Why don't scientists trust atoms? Because they make up everything!",
+      "What do you call a tick on the moon? A luna-tick!",
+      "How do you throw a party in space? You planet!",
+      "How do astronauts organize a party? They planet.",
+      "What did Mars say to Saturn? Give me a ring sometime!"
+    ];
+    
+    // Fun facts list
+    const funFacts = [
+      "The Orion Nebula is visible to the naked eye and is over 1,344 light-years from Earth!",
+      "The word 'nebula' is Latin for 'cloud'.",
+      "The closest known nebula to Earth is the Helix Nebula, about 700 light-years away.",
+      "Nebulae are stellar nurseries where new stars are born!",
+      "Some nebulae are so massive that they span hundreds of light-years across."
+    ];
+
+    // Random default replies
+    const botReplies = [
+      "That's interesting! Tell me more.",
+      "I'm here if you have any questions about the universe!",
+      "NebulaAI at your service. 🚀",
+      "Let's explore some cosmic mysteries together.",
+      "What's on your mind?",
+      "If you want a joke or a fun fact, just ask!"
+    ];
+
+    function smartBotReply(userMessage) {
+      const msg = userMessage.toLowerCase();
+      if(msg.includes('joke')) {
+        return jokes[Math.floor(Math.random() * jokes.length)];
+      }
+      if(msg.includes('fun fact') || msg.includes('interesting')) {
+        return funFacts[Math.floor(Math.random() * funFacts.length)];
+      }
+      if(msg.includes('hello') || msg.includes('hi') || msg.includes('hey')) {
+        return "Hello! How can I help you explore the stars today?";
+      }
+      if(msg.includes('who are you')) {
+        return "I'm NebulaAI, your cosmic chatbot companion!";
+      }
+      // Add more smart responses here
+      return botReplies[Math.floor(Math.random() * botReplies.length)];
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('userInput');
+      const userMessage = input.value.trim();
+      if (!userMessage) return;
+      appendMessage('user', userMessage);
+      input.value = '';
+      setTimeout(() => {
+        appendMessage('bot', smartBotReply(userMessage));
+      }, 900);
+    }
+  </script>
 </body>
 </html>
