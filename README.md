@@ -1,6 +1,6 @@
 # Nebula - AI Chatbot
 
-Nebula is a Node.js-based AI chatbot powered by NebularGPT, inspired by ChatGPT. It provides a conversational interface for interacting with AI models.
+Nebula is a Node.js-based AI chatbot powered by NebulaAI, inspired by ChatGPT. It provides a conversational interface for interacting with AI models.
 
 ## Features
 
