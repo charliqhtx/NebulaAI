@@ -1,11 +1,39 @@
 # Installation & Access
 
-The live web version of NebulaAI is available at [https://nebula-ui-production.up.railway.app](https://nebula-ui-production.up.railway.app).
+To install and access NebulaAI, please follow the steps below:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/charliqhtx/NebulaAI.git
+   ```
+2. Change into the directory:
+   ```bash
+   cd NebulaAI
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Run the application:
+   ```bash
+   npm start
+   ```
 
-**iOS:** Coming Soon
+---
 
+# Getting Started
 
+Follow the instructions below to get started with NebulaAI.
 
 # Features
 
-[Existing content follows...]
+- Feature 1: Description
+- Feature 2: Description
+
+# API Endpoints
+
+1. **GET /api/endpoint1** - Description
+2. **POST /api/endpoint2** - Description
+
+# Configuration
+
+The application can be configured through the following settings. Update the `config.js` file as necessary.
