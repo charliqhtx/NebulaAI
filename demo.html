@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>NebulaAI Chatbot Demo</title>
+  <title>Nebula Chatbot Demo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
@@ -81,7 +81,7 @@
 <body>
   <div id="overlay"></div>
   <div class="chatbox-container">
-    <h2 style="color:#fff;text-align:center;letter-spacing:1px;">🪐 NebulaAI Chatbot</h2>
+    <h2 style="color:#fff;text-align:center;letter-spacing:1px;"> Nebula Chatbot</h2>
     <div id="chatbox"></div>
     <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" onkeydown="if(event.key==='Enter'){sendMessage();}">
     <button id="sendBtn" onclick="sendMessage()">Send</button>
@@ -134,9 +134,9 @@
         return "Hello! How can I help you explore the stars today?";
       }
       if(msg.includes('who are you')) {
-        return "I'm NebulaAI, your cosmic chatbot companion!";
+        return "I'm Nebula, your cosmic chatbot companion!";
       }
-      // Add more smart responses here
+      //# [insert smartReply here]
       return botReplies[Math.floor(Math.random() * botReplies.length)];
     }
 
