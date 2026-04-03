@@ -1,3 +1,8 @@
+# Getting Started
+Follow the instructions below to get started with Nebula.
+
+
+
 # Installation & Access
 
 To install and access NebulaAI, please follow the steps below:
@@ -24,9 +29,6 @@ To install and access NebulaAI, please follow the steps below:
 There is a demo you can try using the link 'https://charliqhtx.github.io/NebulaAI/demo.html',
 if you don't want to go through this progress, but Nebula is slightly limited using this approach, only being able to tell jokes and fun facts on command, but still featuring a cool background.
 
-# Getting Started
-
-Follow the instructions below to get started with NebulaAI.
 
 # Features
 
