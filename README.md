@@ -33,8 +33,7 @@ if you don't want to go through this progress, but Nebula is slightly limited us
 # Features
 
 - Basic chatbot experience
-- Certain features (e.g. copy and paste) may not be availible
-
+- Certain features (e.g. copy and paste) may not be available
 
 # Configuration
 
