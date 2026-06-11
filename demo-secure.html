@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nebula Chatbot Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      background: url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1500&q=80') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    #overlay {
+      background: rgba(10, 11, 30, 0.65);
+      min-height: 100vh;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0; left: 0;
+      z-index: 0;
+    }
+    .chatbox-container {
+      position: relative;
+      z-index: 1;
+      max-width: 400px;
+      margin: 60px auto 0 auto;
+      background: rgba(30,30,45,0.95);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      padding: 28px 22px 22px 22px;
+    }
+    #chatbox {
+      color: white;
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(50,60,90,0.75);
+      min-height: 270px;
+      max-height: 320px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      font-size: 1em;
+    }
+    #userInput, #sendBtn {
+      font-size: 1em;
+      padding: 8px;
+    }
+    #userInput {
+      width: 65%;
+      border-radius: 5px;
+      border: 1px solid #555;
+      background: rgba(20, 30, 55, 0.8);
+      color: white;
+      margin-right: 1%;
+    }
+    #userInput:disabled {
+      opacity: 0.6;
+    }
+    #sendBtn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background: #7a5fff;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #sendBtn:hover:not(:disabled) {
+      background: #a06af9;
+    }
+    #sendBtn:disabled {
+      background: #555;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    .message { 
+      margin: 8px 0; 
+      word-wrap: break-word;
+    }
+    .user { color: #ffe66d; }
+    .bot { color: #36f3fd; }
+    .typing-indicator {
+      color: #36f3fd;
+    }
+    .typing-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #36f3fd;
+      animation: typing 1.4s infinite;
+    }
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes typing {
+      0%, 60%, 100% { opacity: 0.3; }
+      30% { opacity: 1; }
+    }
+    .error-message {
+      color: #ff6b6b;
+      font-size: 0.9em;
+    }
+    .setup-notice {
+      color: #ffc107;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+      padding: 8px;
+      background: rgba(255, 193, 7, 0.1);
+      border-radius: 4px;
+    }
+    @media (max-width: 480px) {
+      .chatbox-container {
+        max-width: 96vw;
+        padding: 8vw 3vw 3vw 3vw;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="overlay"></div>
+  <div class="chatbox-container">
+    <h2 style="color:#fff;text-align:center;letter-spacing:1px;"> Nebula Chatbot</h2>
+    <div class="setup-notice" id="setupNotice" style="display:none;">
+      ⚠️ Server not running or API key not configured. Make sure to run `npm start` and check your `.env` file.
+    </div>
+    <div id="chatbox"></div>
+    <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" onkeydown="if(event.key==='Enter'){sendMessage();}">
+    <button id="sendBtn" onclick="sendMessage()">Send</button>
+  </div>
+  <script>
+    // Joke list
+    const jokes = [
+      "Why did the astronaut break up with his girlfriend before going to space? He needed space!",
+      "Why don't scientists trust atoms? Because they make up everything!",
+      "What do you call a tick on the moon? A luna-tick!",
+      "How do you throw a party in space? You planet!",
+      "What did Mars say to Saturn? Give me a ring sometime!"
+    ];
+    
+    // Fun facts list
+    const funFacts = [
+      "The Orion Nebula is visible to the naked eye and is over 1,344 light-years from Earth!",
+      "The word 'nebula' is Latin for 'cloud'.",
+      "The closest known nebula to Earth is the Helix Nebula, about 700 light-years away.",
+      "Nebulae are stellar nurseries where new stars are born!",
+      "Some nebulae are so massive that they span hundreds of light-years across."
+    ];
+
+    // Random default replies (fallback)
+    const botReplies = [
+      "That's interesting! Tell me more.",
+      "I'm here if you have any questions about the universe!",
+      "NebulaAI at your service. 🚀",
+      "Let's explore some cosmic mysteries together.",
+      "What's on your mind?"
+    ];
+
+    function appendMessage(sender, text) {
+      const chatbox = document.getElementById('chatbox');
+      chatbox.innerHTML += `<div class="message ${sender === 'user' ? 'user' : 'bot'}"><strong>${sender === 'user' ? "You" : "NebulaAI"}:</strong> ${text}</div>`;
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+      const chatbox = document.getElementById('chatbox');
+      chatbox.innerHTML += `<div class="message bot typing-indicator"><strong>NebulaAI:</strong> <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>`;
+      chatbox.scrollTop = chatbox.scrollHeight;
+      return chatbox.lastElementChild;
+    }
+
+    function removeTypingIndicator(element) {
+      if (element && element.parentNode) {
+        element.remove();
+      }
+    }
+
+    function smartBotReply(userMessage) {
+      const msg = userMessage.toLowerCase();
+      
+      if(msg.includes('joke')) {
+        return jokes[Math.floor(Math.random() * jokes.length)];
+      }
+      if(msg.includes('fun fact') || msg.includes('interesting')) {
+        return funFacts[Math.floor(Math.random() * funFacts.length)];
+      }
+      if(msg.includes('hello') || msg.includes('hi') || msg.includes('hey')) {
+        return "Hello! How can I help you explore the stars today?";
+      }
+      if(msg.includes('who are you')) {
+        return "I'm Nebula, your cosmic chatbot companion! I can discuss space, astronomy, and answer your questions about the universe.";
+      }
+      
+      return botReplies[Math.floor(Math.random() * botReplies.length)];
+    }
+
+    function showSetupNotice() {
+      const notice = document.getElementById('setupNotice');
+      if (notice) {
+        notice.style.display = 'block';
+      }
+    }
+
+    async function getAIResponse(userMessage) {
+      try {
+        // Call server endpoint (API key is secure on the backend)
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ message: userMessage })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('Error:', error);
+          if (response.status === 500) {
+            showSetupNotice();
+          }
+          return "Sorry, I encountered an error. Please try again!";
+        }
+
+        const data = await response.json();
+        return data.response;
+      } catch (error) {
+        console.error('Error:', error);
+        showSetupNotice();
+        return "I'm having trouble connecting to my services. Make sure the server is running!";
+      }
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('userInput');
+      const sendBtn = document.getElementById('sendBtn');
+      const userMessage = input.value.trim();
+      
+      if (!userMessage) return;
+      
+      appendMessage('user', userMessage);
+      input.value = '';
+      input.disabled = true;
+      sendBtn.disabled = true;
+
+      const typingElement = showTypingIndicator();
+
+      try {
+        const botResponse = await getAIResponse(userMessage);
+        removeTypingIndicator(typingElement);
+        appendMessage('bot', botResponse);
+      } catch (error) {
+        console.error('Error:', error);
+        removeTypingIndicator(typingElement);
+        appendMessage('bot', "Sorry, something went wrong. Please try again!");
+      } finally {
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+  </script>
+</body>
+</html>
