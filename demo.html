@@ -55,6 +55,9 @@
       color: white;
       margin-right: 1%;
     }
+    #userInput:disabled {
+      opacity: 0.6;
+    }
     #sendBtn {
       padding: 8px 12px;
       border: none;
@@ -64,12 +67,53 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-    #sendBtn:hover {
+    #sendBtn:hover:not(:disabled) {
       background: #a06af9;
     }
-    .message { margin: 8px 0; }
+    #sendBtn:disabled {
+      background: #555;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    .message { 
+      margin: 8px 0; 
+      word-wrap: break-word;
+    }
     .user { color: #ffe66d; }
     .bot { color: #36f3fd; }
+    .typing-indicator {
+      color: #36f3fd;
+    }
+    .typing-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #36f3fd;
+      animation: typing 1.4s infinite;
+    }
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes typing {
+      0%, 60%, 100% { opacity: 0.3; }
+      30% { opacity: 1; }
+    }
+    .error-message {
+      color: #ff6b6b;
+      font-size: 0.9em;
+    }
+    .setup-notice {
+      color: #ffc107;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+      padding: 8px;
+      background: rgba(255, 193, 7, 0.1);
+      border-radius: 4px;
+    }
     @media (max-width: 480px) {
       .chatbox-container {
         max-width: 96vw;
@@ -82,24 +126,44 @@
   <div id="overlay"></div>
   <div class="chatbox-container">
     <h2 style="color:#fff;text-align:center;letter-spacing:1px;"> Nebula Chatbot</h2>
+    <div class="setup-notice" id="setupNotice" style="display:none;">
+      ⚠️ To enable AI responses, add your OpenAI API key to the code (line 127)
+    </div>
     <div id="chatbox"></div>
     <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" onkeydown="if(event.key==='Enter'){sendMessage();}">
     <button id="sendBtn" onclick="sendMessage()">Send</button>
   </div>
   <script>
+    // ⚠️ IMPORTANT: Replace with your actual OpenAI API key
+    // Get one at: https://platform.openai.com/api-keys
+    const OPENAI_API_KEY = ''; // Leave empty to use demo mode
+    const USE_DEMO_MODE = !OPENAI_API_KEY;
+
     function appendMessage(sender, text) {
       const chatbox = document.getElementById('chatbox');
       chatbox.innerHTML += `<div class="message ${sender === 'user' ? 'user' : 'bot'}"><strong>${sender === 'user' ? "You" : "NebulaAI"}:</strong> ${text}</div>`;
       chatbox.scrollTop = chatbox.scrollHeight;
     }
 
-    // Joke list (could also fetch live from an API in a real implementation!)
+    function showTypingIndicator() {
+      const chatbox = document.getElementById('chatbox');
+      chatbox.innerHTML += `<div class="message bot typing-indicator"><strong>NebulaAI:</strong> <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>`;
+      chatbox.scrollTop = chatbox.scrollHeight;
+      return chatbox.lastElementChild;
+    }
+
+    function removeTypingIndicator(element) {
+      if (element && element.parentNode) {
+        element.remove();
+      }
+    }
+
+    // Joke list
     const jokes = [
       "Why did the astronaut break up with his girlfriend before going to space? He needed space!",
       "Why don't scientists trust atoms? Because they make up everything!",
       "What do you call a tick on the moon? A luna-tick!",
       "How do you throw a party in space? You planet!",
-      "How do astronauts organize a party? They planet.",
       "What did Mars say to Saturn? Give me a ring sometime!"
     ];
     
@@ -112,19 +176,66 @@
       "Some nebulae are so massive that they span hundreds of light-years across."
     ];
 
-    // Random default replies
+    // Random default replies (fallback)
     const botReplies = [
-
-            "That's interesting! Tell me more.",
+      "That's interesting! Tell me more.",
       "I'm here if you have any questions about the universe!",
       "NebulaAI at your service. 🚀",
       "Let's explore some cosmic mysteries together.",
-      "What's on your mind?",
-      "If you want a joke or a fun fact, just ask!"
+      "What's on your mind?"
     ];
+
+    async function getAIResponse(userMessage) {
+      if (USE_DEMO_MODE) {
+        // Demo mode: use pattern matching
+        return smartBotReply(userMessage);
+      }
+
+      try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENAI_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-3.5-turbo',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are Nebula, a friendly and knowledgeable cosmic chatbot that loves discussing space, astronomy, and the universe. Keep responses concise and engaging. You can search the web for current information and provide accurate, well-informed answers. When discussing space topics, be enthusiastic and educational.'
+              },
+              {
+                role: 'user',
+                content: userMessage
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 200
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('API Error:', error);
+          if (response.status === 401) {
+            showSetupNotice();
+            return "I couldn't connect to my AI services. Please check your API key configuration.";
+          }
+          return "Sorry, I encountered an error processing your request. Try again in a moment!";
+        }
+
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } catch (error) {
+        console.error('Error:', error);
+        return "I'm having trouble connecting to my AI services right now. Try again later!";
+      }
+    }
 
     function smartBotReply(userMessage) {
       const msg = userMessage.toLowerCase();
+      
       if(msg.includes('joke')) {
         return jokes[Math.floor(Math.random() * jokes.length)];
       }
@@ -135,23 +246,51 @@
         return "Hello! How can I help you explore the stars today?";
       }
       if(msg.includes('who are you')) {
-        return "I'm Nebula, your cosmic chatbot companion!";
+        return "I'm Nebula, your cosmic chatbot companion! I can discuss space, astronomy, and answer your questions about the universe.";
       }
-      //# [insert smartReply here]
-      return botReplies[Math.floor(Math.random() * botReplies.length)];{
-    if (msg.includes('ChatGPT')){
-      return "Sorry, I'm Nebula and I don't know anything about ChatGPT";
+      
+      return botReplies[Math.floor(Math.random() * botReplies.length)];
     }
 
-    function sendMessage() {
+    function showSetupNotice() {
+      const notice = document.getElementById('setupNotice');
+      if (notice) {
+        notice.style.display = 'block';
+      }
+    }
+
+    async function sendMessage() {
       const input = document.getElementById('userInput');
+      const sendBtn = document.getElementById('sendBtn');
       const userMessage = input.value.trim();
+      
       if (!userMessage) return;
+      
       appendMessage('user', userMessage);
       input.value = '';
-      setTimeout(() => {
-        appendMessage('bot', smartBotReply(userMessage));
-      }, 900);
+      input.disabled = true;
+      sendBtn.disabled = true;
+
+      const typingElement = showTypingIndicator();
+
+      try {
+        const botResponse = await getAIResponse(userMessage);
+        removeTypingIndicator(typingElement);
+        appendMessage('bot', botResponse);
+      } catch (error) {
+        console.error('Error:', error);
+        removeTypingIndicator(typingElement);
+        appendMessage('bot', "Sorry, something went wrong. Please try again!");
+      } finally {
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+
+    // Show setup notice if using demo mode
+    if (USE_DEMO_MODE) {
+      showSetupNotice();
     }
   </script>
 </body>
