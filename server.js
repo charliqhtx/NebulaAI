@@ -4,21 +4,51 @@ const fetch = require('node-fetch');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const MAX_MESSAGE_LENGTH = 4000;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MAX_REQUESTS_PER_WINDOW = 20;
+const requestLog = new Map();
 
+app.use(express.json({ limit: '10kb' }));
 app.use(express.static('.'));
-app.use(express.json());
 
-// API endpoint to get AI response (server-side)
+function isRateLimited(ip) {
+  const now = Date.now();
+  const recentRequests = (requestLog.get(ip) || []).filter(
+    timestamp => now - timestamp < RATE_LIMIT_WINDOW_MS
+  );
+
+  if (recentRequests.length >= MAX_REQUESTS_PER_WINDOW) {
+    requestLog.set(ip, recentRequests);
+    return true;
+  }
+
+  recentRequests.push(now);
+  requestLog.set(ip, recentRequests);
+  return false;
+}
+
+// API endpoint to get AI response. The API key is read only on the server.
 app.post('/api/chat', async (req, res) => {
+  if (isRateLimited(req.ip)) {
+    return res.status(429).json({ error: 'Too many requests. Please try again later.' });
+  }
+
   const { message } = req.body;
 
-  if (!message) {
+  if (typeof message !== 'string' || !message.trim()) {
     return res.status(400).json({ error: 'Message is required' });
+  }
+
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    return res.status(400).json({
+      error: `Message must be ${MAX_MESSAGE_LENGTH} characters or fewer`
+    });
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    console.error('API key not found in environment variables');
+    console.error('OPENAI_API_KEY is not configured');
     return res.status(500).json({ error: 'API key not configured' });
   }
 
@@ -27,19 +57,16 @@ app.post('/api/chat', async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        Authorization: `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',
-            content: 'You are Nebula, a friendly and knowledgeable cosmic chatbot that loves discussing space, astronomy, and the universe. Keep responses concise and engaging. Provide accurate, well-researched information about space, stars, planets, and cosmic phenomena.'
+            content: 'You are Nebula, a friendly and knowledgeable cosmic chatbot that loves discussing space, astronomy, and the universe. Keep responses concise and engaging. Provide accurate, helpful answers.'
           },
-          {
-            role: 'user',
-            content: message
-          }
+          { role: 'user', content: message.trim() }
         ],
         temperature: 0.7,
         max_tokens: 200
@@ -47,15 +74,22 @@ app.post('/api/chat', async (req, res) => {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      console.error('OpenAI API Error:', error);
-      return res.status(response.status).json({ error: 'Failed to get AI response' });
+      // Do not send OpenAI's response (which may contain sensitive details) to clients.
+      console.error('OpenAI request failed with status', response.status);
+      return res.status(502).json({ error: 'Failed to get AI response' });
     }
 
     const data = await response.json();
-    res.json({ response: data.choices[0].message.content });
+    const answer = data.choices?.[0]?.message?.content;
+
+    if (typeof answer !== 'string') {
+      console.error('OpenAI returned an unexpected response');
+      return res.status(502).json({ error: 'Invalid AI response' });
+    }
+
+    res.json({ response: answer });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('OpenAI request error:', error.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
